@@ -10,37 +10,57 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
+import com.example.languagereminder.data.WeekdayTextStore
 import com.example.languagereminder.overlay.OverlayService
+import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 
 class MainActivity : ComponentActivity() {
 
     private var overlayPermissionGranted by mutableStateOf(false)
+    private lateinit var weekdayTextStore: WeekdayTextStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        weekdayTextStore = WeekdayTextStore(this)
         enableEdgeToEdge()
         setContent {
+            val savedTexts by weekdayTextStore.weekdayTexts.collectAsState(
+                initial = DayOfWeek.entries.associateWith { WeekdayTextStore.defaultText(it) }
+            )
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     LauncherScreen(
                         overlayPermissionGranted = overlayPermissionGranted,
+                        savedTexts = savedTexts,
                         onGrantPermissionClick = ::requestOverlayPermission,
                         onStartOverlayClick = { OverlayService.start(this) },
-                        onStopOverlayClick = { OverlayService.stop(this) }
+                        onStopOverlayClick = { OverlayService.stop(this) },
+                        onSaveTexts = { values ->
+                            lifecycleScope.launch { weekdayTextStore.saveAll(values) }
+                        }
                     )
                 }
             }
@@ -70,18 +90,22 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun LauncherScreen(
     overlayPermissionGranted: Boolean,
+    savedTexts: Map<DayOfWeek, String>,
     onGrantPermissionClick: () -> Unit,
     onStartOverlayClick: () -> Unit,
-    onStopOverlayClick: () -> Unit
+    onStopOverlayClick: () -> Unit,
+    onSaveTexts: (Map<DayOfWeek, String>) -> Unit
 ) {
-    LaunchedEffect(overlayPermissionGranted) { }
+    val scope = rememberCoroutineScope()
+    var editableTexts by remember(savedTexts) { mutableStateOf(savedTexts) }
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
             text = "Floating Weekday Widget",
@@ -101,15 +125,54 @@ private fun LauncherScreen(
             }
         }
 
-        Button(
-            onClick = onStartOverlayClick,
-            enabled = overlayPermissionGranted
-        ) {
-            Text("Start Floating Widget")
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(
+                onClick = onStartOverlayClick,
+                enabled = overlayPermissionGranted
+            ) {
+                Text("Start Floating Widget")
+            }
+
+            Button(onClick = onStopOverlayClick) {
+                Text("Stop Floating Widget")
+            }
         }
 
-        Button(onClick = onStopOverlayClick) {
-            Text("Stop Floating Widget")
+        Text(
+            text = "Day to text mapping",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        DayOfWeek.entries.forEach { day ->
+            OutlinedTextField(
+                value = editableTexts[day].orEmpty(),
+                onValueChange = { newValue ->
+                    editableTexts = editableTexts.toMutableMap().apply { put(day, newValue) }
+                },
+                label = { Text(dayLabel(day)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Button(
+            onClick = {
+                scope.launch { onSaveTexts(editableTexts) }
+            },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Save Mapping")
         }
     }
+}
+
+private fun dayLabel(day: DayOfWeek): String = when (day) {
+    DayOfWeek.MONDAY -> "Monday"
+    DayOfWeek.TUESDAY -> "Tuesday"
+    DayOfWeek.WEDNESDAY -> "Wednesday"
+    DayOfWeek.THURSDAY -> "Thursday"
+    DayOfWeek.FRIDAY -> "Friday"
+    DayOfWeek.SATURDAY -> "Saturday"
+    DayOfWeek.SUNDAY -> "Sunday"
 }

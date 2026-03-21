@@ -5,10 +5,10 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@android:color/background_dark"
-    android:paddingStart="6dp"
+    android:paddingStart="12dp"
     android:paddingTop="4dp"
-    android:paddingEnd="6dp"
-    android:paddingBottom="4dp">
+    android:paddingEnd="12dp"
+    android:paddingBottom="5dp">
 
     <LinearLayout
         android:id="@+id/collapsed_container"
@@ -25,101 +25,5 @@
             android:textColor="@android:color/white"
             android:textStyle="bold"
             android:text="Today" />
-
-        <ImageButton
-            android:id="@+id/expand_button"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_marginStart="4dp"
-            android:background="@android:color/transparent"
-            android:contentDescription="Expand"
-            android:src="@android:drawable/arrow_down_float"
-            android:tint="@android:color/white" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/expanded_container"
-        android:layout_width="260dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Configure days"
-            android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView android:layout_width="56dp" android:layout_height="wrap_content" android:text="Mon" android:textColor="@android:color/white" />
-            <EditText android:id="@+id/edit_monday" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:singleLine="true" android:inputType="text" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView android:layout_width="56dp" android:layout_height="wrap_content" android:text="Tue" android:textColor="@android:color/white" />
-            <EditText android:id="@+id/edit_tuesday" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:singleLine="true" android:inputType="text" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView android:layout_width="56dp" android:layout_height="wrap_content" android:text="Wed" android:textColor="@android:color/white" />
-            <EditText android:id="@+id/edit_wednesday" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:singleLine="true" android:inputType="text" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView android:layout_width="56dp" android:layout_height="wrap_content" android:text="Thu" android:textColor="@android:color/white" />
-            <EditText android:id="@+id/edit_thursday" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:singleLine="true" android:inputType="text" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView android:layout_width="56dp" android:layout_height="wrap_content" android:text="Fri" android:textColor="@android:color/white" />
-            <EditText android:id="@+id/edit_friday" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:singleLine="true" android:inputType="text" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView android:layout_width="56dp" android:layout_height="wrap_content" android:text="Sat" android:textColor="@android:color/white" />
-            <EditText android:id="@+id/edit_saturday" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:singleLine="true" android:inputType="text" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView android:layout_width="56dp" android:layout_height="wrap_content" android:text="Sun" android:textColor="@android:color/white" />
-            <EditText android:id="@+id/edit_sunday" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:singleLine="true" android:inputType="text" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:gravity="end"
-            android:orientation="horizontal">
-            <Button
-                android:id="@+id/save_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Save" />
-            <Button
-                android:id="@+id/close_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Close" />
-        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

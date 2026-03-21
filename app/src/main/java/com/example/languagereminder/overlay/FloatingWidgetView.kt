@@ -7,71 +7,26 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.example.languagereminder.R
 import java.time.DayOfWeek
 
 class FloatingWidgetView(
-    context: Context,
-    private val onSave: (Map<DayOfWeek, String>) -> Unit,
-    private val onClose: () -> Unit
+    context: Context
 ) {
     val rootView: View = LayoutInflater.from(context).inflate(R.layout.overlay_widget, null)
 
     private val collapsedContainer: LinearLayout = rootView.findViewById(R.id.collapsed_container)
-    private val expandedContainer: LinearLayout = rootView.findViewById(R.id.expanded_container)
     private val todayText: TextView = rootView.findViewById(R.id.today_text)
-    private val expandButton: ImageButton = rootView.findViewById(R.id.expand_button)
-    private val saveButton: Button = rootView.findViewById(R.id.save_button)
-    private val closeButton: Button = rootView.findViewById(R.id.close_button)
-
-    private val editMap: Map<DayOfWeek, EditText> = mapOf(
-        DayOfWeek.MONDAY to rootView.findViewById(R.id.edit_monday),
-        DayOfWeek.TUESDAY to rootView.findViewById(R.id.edit_tuesday),
-        DayOfWeek.WEDNESDAY to rootView.findViewById(R.id.edit_wednesday),
-        DayOfWeek.THURSDAY to rootView.findViewById(R.id.edit_thursday),
-        DayOfWeek.FRIDAY to rootView.findViewById(R.id.edit_friday),
-        DayOfWeek.SATURDAY to rootView.findViewById(R.id.edit_saturday),
-        DayOfWeek.SUNDAY to rootView.findViewById(R.id.edit_sunday)
-    )
-
-    private var isExpanded = false
     private val cornerRadiusPx = context.resources.displayMetrics.density * 18f
 
     init {
         updateWidgetShape(stuckToRight = false)
-        expandButton.setOnClickListener {
-            setExpanded(!isExpanded)
-        }
-        saveButton.setOnClickListener {
-            val values = DayOfWeek.entries.associateWith { editMap[it]?.text?.toString().orEmpty() }
-            onSave(values)
-            setExpanded(false)
-        }
-        closeButton.setOnClickListener { onClose() }
-        rootView.setOnLongClickListener {
-            setExpanded(!isExpanded)
-            true
-        }
     }
 
     fun bindValues(values: Map<DayOfWeek, String>, today: DayOfWeek) {
         todayText.text = values[today].orEmpty()
-        DayOfWeek.entries.forEach { day ->
-            editMap[day]?.setText(values[day].orEmpty())
-        }
-    }
-
-    fun setExpanded(expanded: Boolean) {
-        isExpanded = expanded
-        expandedContainer.visibility = if (expanded) View.VISIBLE else View.GONE
-        expandButton.setImageResource(
-            if (expanded) android.R.drawable.arrow_up_float else android.R.drawable.arrow_down_float
-        )
     }
 
     fun installDragBehavior(params: WindowManager.LayoutParams, windowManager: WindowManager) {

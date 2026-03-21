@@ -79,13 +79,7 @@ class OverlayService : Service() {
         }
         layoutParams = params
 
-        widgetView = FloatingWidgetView(
-            context = this,
-            onSave = { values ->
-                serviceScope.launch { store.saveAll(values) }
-            },
-            onClose = { stopSelf() }
-        )
+        widgetView = FloatingWidgetView(context = this)
         widgetView.installDragBehavior(params, windowManager)
         windowManager.addView(widgetView.rootView, params)
     }
