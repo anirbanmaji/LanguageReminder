@@ -5,7 +5,10 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@android:color/background_dark"
-    android:padding="10dp">
+    android:paddingStart="6dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="4dp">
 
     <LinearLayout
         android:id="@+id/collapsed_container"
@@ -18,15 +21,16 @@
             android:id="@+id/today_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="13sp"
             android:textColor="@android:color/white"
             android:textStyle="bold"
             android:text="Today" />
 
         <ImageButton
             android:id="@+id/expand_button"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="8dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="4dp"
             android:background="@android:color/transparent"
             android:contentDescription="Expand"
             android:src="@android:drawable/arrow_down_float"
@@ -37,7 +41,7 @@
         android:id="@+id/expanded_container"
         android:layout_width="260dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:orientation="vertical"
         android:visibility="gone">
 
