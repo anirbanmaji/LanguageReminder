@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Language Reminder</string>
+    <string name="overlay_channel_name">Floating Widget</string>
+    <string name="overlay_channel_description">Shows the floating weekday widget</string>
+    <string name="overlay_notification_text">Floating weekday widget is active</string>
+</resources>
