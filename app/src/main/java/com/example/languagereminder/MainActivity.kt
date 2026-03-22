@@ -1,13 +1,17 @@
 package com.example.languagereminder
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,13 +19,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,8 +37,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.languagereminder.data.DisplayMode
 import com.example.languagereminder.data.WeekdayTextStore
 import com.example.languagereminder.overlay.OverlayService
 import kotlinx.coroutines.launch
@@ -40,6 +51,7 @@ import java.time.DayOfWeek
 class MainActivity : ComponentActivity() {
 
     private var overlayPermissionGranted by mutableStateOf(false)
+    private var notificationPermissionGranted by mutableStateOf(false)
     private lateinit var weekdayTextStore: WeekdayTextStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,17 +59,53 @@ class MainActivity : ComponentActivity() {
         weekdayTextStore = WeekdayTextStore(this)
         enableEdgeToEdge()
         setContent {
+            val context = LocalContext.current
             val savedTexts by weekdayTextStore.weekdayTexts.collectAsState(
                 initial = DayOfWeek.entries.associateWith { WeekdayTextStore.defaultText(it) }
             )
+            val displayMode by weekdayTextStore.displayMode.collectAsState(
+                initial = DisplayMode.FLOATING_WIDGET
+            )
+
+            val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                notificationPermissionGranted = isGranted
+            }
+
+            LaunchedEffect(Unit) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    notificationPermissionGranted = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+
+                    if (!notificationPermissionGranted) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                } else {
+                    notificationPermissionGranted = true
+                }
+            }
+
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     LauncherScreen(
                         overlayPermissionGranted = overlayPermissionGranted,
+                        notificationPermissionGranted = notificationPermissionGranted,
                         savedTexts = savedTexts,
-                        onGrantPermissionClick = ::requestOverlayPermission,
+                        displayMode = displayMode,
+                        onGrantOverlayPermissionClick = ::requestOverlayPermission,
+                        onGrantNotificationPermissionClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        },
                         onStartOverlayClick = { OverlayService.start(this) },
                         onStopOverlayClick = { OverlayService.stop(this) },
+                        onDisplayModeChange = { mode ->
+                            lifecycleScope.launch { weekdayTextStore.saveDisplayMode(mode) }
+                        },
                         onSaveTexts = { values ->
                             lifecycleScope.launch { weekdayTextStore.saveAll(values) }
                         }
@@ -70,6 +118,14 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         overlayPermissionGranted = hasOverlayPermission()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionGranted = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            notificationPermissionGranted = true
+        }
     }
 
     private fun hasOverlayPermission(): Boolean {
@@ -90,10 +146,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun LauncherScreen(
     overlayPermissionGranted: Boolean,
+    notificationPermissionGranted: Boolean,
     savedTexts: Map<DayOfWeek, String>,
-    onGrantPermissionClick: () -> Unit,
+    displayMode: DisplayMode,
+    onGrantOverlayPermissionClick: () -> Unit,
+    onGrantNotificationPermissionClick: () -> Unit,
     onStartOverlayClick: () -> Unit,
     onStopOverlayClick: () -> Unit,
+    onDisplayModeChange: (DisplayMode) -> Unit,
     onSaveTexts: (Map<DayOfWeek, String>) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -108,33 +168,82 @@ private fun LauncherScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
-            text = "Floating Weekday Widget",
+            text = "Language Reminder Settings",
             style = MaterialTheme.typography.headlineSmall
         )
+
         Text(
-            text = if (overlayPermissionGranted) {
-                "Overlay permission is granted."
-            } else {
-                "Grant overlay permission to show widget above other apps."
-            }
+            text = "Display Mode",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 8.dp)
         )
 
-        if (!overlayPermissionGranted) {
-            Button(onClick = onGrantPermissionClick) {
-                Text("Grant Overlay Permission")
+        Column {
+            DisplayMode.entries.forEach { mode ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = displayMode == mode,
+                            onClick = { onDisplayModeChange(mode) },
+                            role = Role.RadioButton
+                        )
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = displayMode == mode,
+                        onClick = null
+                    )
+                    Text(
+                        text = when (mode) {
+                            DisplayMode.FLOATING_WIDGET -> "Floating Widget"
+                            DisplayMode.STATUS_BAR -> "Status Bar (Notification2)"
+                        },
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+        }
+
+        if (displayMode == DisplayMode.FLOATING_WIDGET) {
+            Text(
+                text = if (overlayPermissionGranted) {
+                    "Overlay permission is granted."
+                } else {
+                    "Grant overlay permission to show widget above other apps."
+                },
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            if (!overlayPermissionGranted) {
+                Button(onClick = onGrantOverlayPermissionClick) {
+                    Text("Grant Overlay Permission")
+                }
+            }
+        }
+
+        if (!notificationPermissionGranted) {
+            Text(
+                text = "Notification permission is required to show the reminder.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+            Button(onClick = onGrantNotificationPermissionClick) {
+                Text("Grant Notification Permission")
             }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(
                 onClick = onStartOverlayClick,
-                enabled = overlayPermissionGranted
+                enabled = notificationPermissionGranted && (displayMode == DisplayMode.STATUS_BAR || overlayPermissionGranted)
             ) {
-                Text("Start Floating Widget")
+                Text("Start Service")
             }
 
             Button(onClick = onStopOverlayClick) {
-                Text("Stop Floating Widget")
+                Text("Stop Service")
             }
         }
 

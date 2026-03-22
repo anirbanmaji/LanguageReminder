@@ -4,4 +4,6 @@
     <string name="overlay_channel_name">Floating Widget</string>
     <string name="overlay_channel_description">Shows the floating weekday widget</string>
     <string name="overlay_notification_text">Floating weekday widget is active</string>
+    <string name="status_bar_channel_name">Status Bar</string>
+    <string name="status_bar_channel_description">Shows weekday text in status bar</string>
 </resources>
